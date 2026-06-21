@@ -316,6 +316,15 @@ function rebuildBoard() {
     h.setAttribute('y2', String(p));
     svg.appendChild(h);
   }
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      const dot = document.createElementNS(svgNs, 'circle');
+      dot.setAttribute('cx', String(padPct + c * stepPct));
+      dot.setAttribute('cy', String(padPct + r * stepPct));
+      dot.setAttribute('r', '0.6');
+      svg.appendChild(dot);
+    }
+  }
   boardEl.appendChild(svg);
 
   // Intersection cells. size == spacing means cells tile the play area with

@@ -119,6 +119,11 @@ body {
   vector-effect: non-scaling-stroke;
 }
 
+.board-grid circle {
+  fill: #c9933e;
+  fill-opacity: 0.4;
+}
+
 .board-grid .star {
   fill: #c9933e;
   stroke: none;
