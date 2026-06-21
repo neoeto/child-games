@@ -229,7 +229,7 @@
   /* ============================================================
    * Rendering
    * ============================================================ */
-  function renderHint(row, col, lines, player) {
+  function renderHint(row, col, lines, player, showGhost) {
     clearHints();
     if (!lines || lines.length === 0) return;
     ensureOverlay();
@@ -254,7 +254,7 @@
     if (hintLevel !== 'FULL') return; // SUBTLE stops at glow
 
     syncViewBox();
-    renderGhost(row, col, player);
+    if (showGhost !== false) renderGhost(row, col, player);
     for (var li = 0; li < lines.length; li++) {
       renderLine(lines[li]);
       renderCountDots(lines[li]);
@@ -295,21 +295,12 @@
 
     var first = pts[0];
     var last = pts[pts.length - 1];
-    var dx = last.x - first.x;
-    var dy = last.y - first.y;
-    var len = Math.sqrt(dx * dx + dy * dy) || 1;
-    // Perpendicular unit vector for a gentle bow (makes it a curve).
-    var perpX = -dy / len;
-    var perpY = dx / len;
-    var bow = Math.min(12, len * 0.08);
-    var midX = (first.x + last.x) / 2 + perpX * bow;
-    var midY = (first.y + last.y) / 2 + perpY * bow;
 
     var strokeW = Math.max(4, first.size / 3);
 
     var path = document.createElementNS(SVG_NS, 'path');
     path.setAttribute('d', 'M ' + first.x + ' ' + first.y +
-                            ' Q ' + midX + ' ' + midY + ' ' + last.x + ' ' + last.y);
+                            ' L ' + last.x + ' ' + last.y);
     path.setAttribute('stroke', '#ffd000');
     path.setAttribute('stroke-width', String(strokeW));
     path.setAttribute('stroke-linecap', 'round');
@@ -460,7 +451,7 @@
     }
     if (filtered.length === 0) return;
 
-    renderHint(row, col, filtered, char);
+    renderHint(row, col, filtered, char, false);
     currentHint = { row: row, col: col, lines: filtered, player: char, postPlacement: true };
 
     var savedRow = row, savedCol = col;
