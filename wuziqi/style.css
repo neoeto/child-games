@@ -246,6 +246,32 @@ body {
   box-shadow: 0 2px 0 #3d7a1c, 0 4px 10px rgba(60, 120, 30, 0.3) !important;
 }
 
+/* ===== Back-to-Home Button ===== */
+.back-home-btn {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 12px);
+  left: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: none;
+  color: #8a6a4a;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 8px 14px;
+  border-radius: 999px;
+  text-decoration: none;
+  z-index: 50;
+  box-shadow: 0 2px 8px rgba(180, 130, 50, 0.15);
+  transition: transform 80ms ease, background 80ms ease;
+}
+
+.back-home-btn:active {
+  transform: scale(0.94);
+  background: rgba(255, 255, 255, 0.9);
+}
+
 /* ===== Victory Overlay ===== */
 .victory-overlay {
   position: fixed;
