@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# macOS
+.DS_Store
+
+# Editor folders
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+Thumbs.db
+
+# Logs
+*.log
+
+# OpenCode session state
+.omo/

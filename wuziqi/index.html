@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="JoJo五子棋">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <link rel="apple-touch-icon" href="resources/icons/icon-192.png">
+  <title>JoJo五子棋</title>
+</head>
+<body>
+  <header class="turn-indicator">
+    <img class="turn-avatar" src="resources/jojo.png" alt="JoJo">
+    <span class="turn-label">轮到JoJo</span>
+  </header>
+
+  <div class="board-wrapper">
+    <main class="board" aria-label="五子棋棋盘"></main>
+  </div>
+
+  <footer class="controls">
+    <button class="undo-btn" type="button">↶ 悔棋</button>
+    <button class="reset-btn" type="button">↻ 重开</button>
+    <button class="settings-btn" type="button">⚙ 设置</button>
+  </footer>
+
+  <div class="victory-overlay" hidden>
+    <div class="victory-card">
+      <img class="victory-avatar" src="resources/jojo.png" alt="">
+      <p class="victory-text">家人赢啦！</p>
+      <button class="play-again-btn" type="button">再来一局</button>
+    </div>
+  </div>
+
+  <script src="game.js" defer></script>
+  <script src="hint.js" defer></script>
+  <script src="audio.js" defer></script>
+  <script src="settings.js" defer></script>
+</body>
+</html>

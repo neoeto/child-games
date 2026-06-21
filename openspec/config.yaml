@@ -1,0 +1,23 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+context:
+  tech_stack: "Vanilla HTML/CSS/JavaScript (no frameworks, no build tools)"
+  structure: "Each game lives in its own folder (e.g. wuziqi/) with index.html as entry point"
+  conventions:
+    - "Multi-file vanilla JS (no React/Vue/Vite)"
+    - "Resources in <game>/resources/ with lowercase pinyin/English filenames"
+    - "PWA manifest.json + apple-touch-icon for installable web apps"
+    - "Mobile-first, touch UX prioritized for young children"
+  audience: "Children aged 3-6 + parents, co-play on iPad"
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
