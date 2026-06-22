@@ -54,10 +54,24 @@ function unlockOnFirstTouch() {
   speechUnlocked = true;
 }
 
+function primeSpeechSynthesis() {
+  if (!window.speechSynthesis) return;
+  try {
+    var warmup = new SpeechSynthesisUtterance(' ');
+    warmup.volume = 0;
+    warmup.lang = 'zh-CN';
+    window.speechSynthesis.speak(warmup);
+    window.speechSynthesis.cancel();
+  } catch (e) {
+    console.warn('[shizi] speech prime failed:', e);
+  }
+}
+
 function initAudio() {
   var unlock = function () {
     getAudioContext();
     speechUnlocked = true;
+    primeSpeechSynthesis();
   };
   var opts = { once: true, capture: true };
   try { document.addEventListener('pointerdown', unlock, opts); } catch (e) {}
@@ -122,6 +136,8 @@ function speak(char) {
     }
     const utter = new SpeechSynthesisUtterance(char);
     utter.lang = 'zh-CN';
+    utter.volume = 1;
+    utter.pitch = 1;
     let rate = 0.8;
     try {
       const stored = localStorage.getItem('shizi:speechRate');
@@ -142,8 +158,12 @@ function speak(char) {
         }
       } catch (e3) { /* ignore voice pick failure */ }
     }
+    utter.onstart = function () { console.log('[shizi] speech started:', char); };
+    utter.onerror = function (ev) { console.warn('[shizi] speech error:', char, ev.error); };
+    utter.onend = function () { console.log('[shizi] speech ended:', char); };
+    try { window.speechSynthesis.resume(); } catch (e5) {}
     window.speechSynthesis.speak(utter);
-    console.log('[shizi] speak called:', char, 'rate=' + rate, 'speaking=' + window.speechSynthesis.speaking);
+    console.log('[shizi] speak queued:', char, 'rate=' + rate);
   } catch (e) {
     console.warn('[shizi] speak failed:', e);
   }
