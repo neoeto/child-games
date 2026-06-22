@@ -90,6 +90,7 @@ shizi/
 
 ## 已知限制
 
+- **Mac Chrome 发音问题**：Chrome macOS 的 speechSynthesis 引擎存在已知 bug（NSSpeechSynthesizer 中间层卡死），汉字发音可能无法播放。**推荐使用 Safari** 获得完整体验（笔顺动画 + 汉字发音）。Chrome 下笔顺动画、进度、音效等功能均正常，仅语音朗读可能失效。
 - 无 Service Worker 离线缓存（依赖浏览器 HTTP 缓存 + PWA manifest）
 - 无多音字完整支持（`pinyin` 字段仅标注默认读音）
 - 无语音识别（孩子发音评判由家长主观判定）
