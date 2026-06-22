@@ -24,7 +24,6 @@
 let audioCtx = null;
 let soundEnabled = true;
 let ttsAvailable = false;
-let voicesLoaded = false;
 let speechUnlocked = false;
 
 /* ===== AudioContext lazy creation + resume (cloned from wuziqi) ===== */
@@ -48,48 +47,10 @@ function getAudioContext() {
   return audioCtx;
 }
 
-/* ===== First-touch unlock (both AudioContext + speechSynthesis) ===== */
-function unlockOnFirstTouch() {
-  getAudioContext();
-  speechUnlocked = true;
-}
-
-var speechPrimed = false;
-var primeRetryCount = 0;
-
-function primeSpeech() {
-  if (speechPrimed || !window.speechSynthesis) return;
-  try {
-    var u = new SpeechSynthesisUtterance('');
-    u.volume = 0;
-    u.lang = 'zh-CN';
-    u.onend = function () {
-      speechPrimed = true;
-      console.log('[shizi] speech engine primed');
-    };
-    u.onerror = function () {
-      if (primeRetryCount < 3) {
-        primeRetryCount++;
-        setTimeout(primeSpeech, 500);
-      }
-    };
-    window.speechSynthesis.speak(u);
-    setTimeout(function () {
-      if (!speechPrimed) {
-        speechPrimed = true;
-        console.log('[shizi] speech engine primed (timeout fallback)');
-      }
-    }, 1000);
-  } catch (e) {
-    console.warn('[shizi] prime failed:', e);
-  }
-}
-
 function initAudio() {
   var unlock = function () {
     getAudioContext();
     speechUnlocked = true;
-    primeSpeech();
   };
   var opts = { once: true, capture: true };
   try { document.addEventListener('pointerdown', unlock, opts); } catch (e) {}
@@ -97,11 +58,6 @@ function initAudio() {
   try { document.addEventListener('touchstart', unlock, opts); } catch (e) {}
   try { document.addEventListener('keydown', unlock, opts); } catch (e) {}
   initSpeechSynthesis();
-  setInterval(function () {
-    if (window.speechSynthesis && window.speechSynthesis.speaking) {
-      try { window.speechSynthesis.resume(); } catch (e) {}
-    }
-  }, 5000);
 }
 
 /* ===== speechSynthesis: detect zh voice (handles async voiceschanged) ===== */
@@ -112,8 +68,7 @@ function detectZhVoice() {
       return;
     }
     const voices = window.speechSynthesis.getVoices();
-    if (!voices || voices.length === 0) return; // async not loaded yet
-    voicesLoaded = true;
+    if (!voices || voices.length === 0) return;
     for (let i = 0; i < voices.length; i++) {
       if (voices[i].lang && voices[i].lang.toLowerCase().indexOf('zh') === 0) {
         ttsAvailable = true;
@@ -133,7 +88,6 @@ function initSpeechSynthesis() {
     return;
   }
   detectZhVoice();
-  // Chrome loads voices asynchronously
   try {
     if (typeof window.speechSynthesis.onvoiceschanged !== 'undefined') {
       window.speechSynthesis.onvoiceschanged = detectZhVoice;
@@ -150,12 +104,14 @@ function isTtsAvailable() {
 /* ===== speak(char): pronounce a Chinese character =====
  * No cancel() — Chrome's cancel() kills in-flight utterances when speak() is
  * called multiple times (e.g. animation onComplete + user click). Letting the
- * engine queue naturally avoids the "canceled" error entirely. */
+ * engine queue naturally avoids the "canceled" error entirely.
+ * NOTE: Mac Chrome has a known NSSpeechSynthesizer bug where utterances may
+ * be queued but never start. Safari works correctly. See README for details. */
 function speak(char) {
-  if (!soundEnabled) { console.warn('[shizi] speak skipped: soundEnabled=false'); return; }
-  if (!window.speechSynthesis) { console.warn('[shizi] speak skipped: no speechSynthesis'); return; }
-  if (!speechUnlocked) { console.warn('[shizi] speak skipped: speechUnlocked=false'); return; }
-  if (!char || typeof char !== 'string') { console.warn('[shizi] speak skipped: invalid char', char); return; }
+  if (!soundEnabled) return;
+  if (!window.speechSynthesis) return;
+  if (!speechUnlocked) return;
+  if (!char || typeof char !== 'string') return;
 
   try {
     try { window.speechSynthesis.resume(); } catch (e0) {}
@@ -186,14 +142,13 @@ function speak(char) {
       } catch (e3) {}
     }
 
-    utter.onstart = function () { console.log('[shizi] speech started:', char); };
-    utter.onerror = function (ev) { console.warn('[shizi] speech error:', char, ev.error); };
-    utter.onend = function () { console.log('[shizi] speech ended:', char); };
+    utter.onerror = function (ev) {
+      console.warn('audio.js: speak error for', char, ':', ev.error);
+    };
 
     window.speechSynthesis.speak(utter);
-    console.log('[shizi] speak queued:', char, 'rate=' + rate);
   } catch (e) {
-    console.warn('[shizi] speak failed:', e);
+    console.warn('audio.js: speak failed:', e);
   }
 }
 
@@ -225,7 +180,6 @@ function playTone(freq, startTime, attack, sustain, release, peakGain, type) {
   }
 }
 
-/* ===== Sound: UI tap (button click) ===== */
 function playPlaceSound() {
   if (!soundEnabled) return;
   const ctx = getAudioContext();
@@ -238,13 +192,12 @@ function playPlaceSound() {
   }
 }
 
-/* ===== Sound: correct answer (ascending 3-note arpeggio C5-E5-G5) ===== */
 function playCorrectSound() {
   if (!soundEnabled) return;
   const ctx = getAudioContext();
   if (!ctx) return;
   try {
-    const freqs = [523, 659, 784]; // C5, E5, G5
+    const freqs = [523, 659, 784];
     const stepSec = 0.100;
     const now = ctx.currentTime;
     for (let i = 0; i < freqs.length; i++) {
@@ -255,14 +208,12 @@ function playCorrectSound() {
   }
 }
 
-/* ===== Sound: wrong answer (gentle soft descending tone — NON-punishing) ===== */
 function playWrongSound() {
   if (!soundEnabled) return;
   const ctx = getAudioContext();
   if (!ctx) return;
   try {
     const now = ctx.currentTime;
-    // Soft, low, short "wah" — two descending notes at low volume
     playTone(400, now, 0.020, 0.080, 0.120, 0.06, 'sine');
     playTone(300, now + 0.120, 0.020, 0.080, 0.120, 0.05, 'sine');
   } catch (e) {
@@ -270,13 +221,12 @@ function playWrongSound() {
   }
 }
 
-/* ===== Sound: victory melody (5-note triumph — cloned from wuziqi playWinSound) ===== */
 function playWinSound() {
   if (!soundEnabled) return;
   const ctx = getAudioContext();
   if (!ctx) return;
   try {
-    const melody = [523, 659, 784, 1047, 784]; // C5-E5-G5-C6-G5
+    const melody = [523, 659, 784, 1047, 784];
     const noteSec = 0.150;
     const now = ctx.currentTime;
     for (let i = 0; i < melody.length; i++) {
@@ -289,7 +239,6 @@ function playWinSound() {
   }
 }
 
-/* ===== Sound toggle (internal hook — settings.js owns canonical setter) ===== */
 function setSoundEnabledInternal(enabled) {
   soundEnabled = !!enabled;
 }
