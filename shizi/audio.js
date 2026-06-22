@@ -54,10 +54,42 @@ function unlockOnFirstTouch() {
   speechUnlocked = true;
 }
 
+var speechPrimed = false;
+var primeRetryCount = 0;
+
+function primeSpeech() {
+  if (speechPrimed || !window.speechSynthesis) return;
+  try {
+    var u = new SpeechSynthesisUtterance('');
+    u.volume = 0;
+    u.lang = 'zh-CN';
+    u.onend = function () {
+      speechPrimed = true;
+      console.log('[shizi] speech engine primed');
+    };
+    u.onerror = function () {
+      if (primeRetryCount < 3) {
+        primeRetryCount++;
+        setTimeout(primeSpeech, 500);
+      }
+    };
+    window.speechSynthesis.speak(u);
+    setTimeout(function () {
+      if (!speechPrimed) {
+        speechPrimed = true;
+        console.log('[shizi] speech engine primed (timeout fallback)');
+      }
+    }, 1000);
+  } catch (e) {
+    console.warn('[shizi] prime failed:', e);
+  }
+}
+
 function initAudio() {
   var unlock = function () {
     getAudioContext();
     speechUnlocked = true;
+    primeSpeech();
   };
   var opts = { once: true, capture: true };
   try { document.addEventListener('pointerdown', unlock, opts); } catch (e) {}
@@ -65,6 +97,11 @@ function initAudio() {
   try { document.addEventListener('touchstart', unlock, opts); } catch (e) {}
   try { document.addEventListener('keydown', unlock, opts); } catch (e) {}
   initSpeechSynthesis();
+  setInterval(function () {
+    if (window.speechSynthesis && window.speechSynthesis.speaking) {
+      try { window.speechSynthesis.resume(); } catch (e) {}
+    }
+  }, 5000);
 }
 
 /* ===== speechSynthesis: detect zh voice (handles async voiceschanged) ===== */
