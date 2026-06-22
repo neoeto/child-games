@@ -110,56 +110,54 @@ function isTtsAvailable() {
   return ttsAvailable;
 }
 
-/* ===== speak(char): pronounce a Chinese character ===== */
-var speakTimeoutId = null;
+/* ===== speak(char): pronounce a Chinese character =====
+ * No cancel() — Chrome's cancel() kills in-flight utterances when speak() is
+ * called multiple times (e.g. animation onComplete + user click). Letting the
+ * engine queue naturally avoids the "canceled" error entirely. */
 function speak(char) {
   if (!soundEnabled) { console.warn('[shizi] speak skipped: soundEnabled=false'); return; }
   if (!window.speechSynthesis) { console.warn('[shizi] speak skipped: no speechSynthesis'); return; }
   if (!speechUnlocked) { console.warn('[shizi] speak skipped: speechUnlocked=false'); return; }
   if (!char || typeof char !== 'string') { console.warn('[shizi] speak skipped: invalid char', char); return; }
 
-  if (speakTimeoutId) { clearTimeout(speakTimeoutId); speakTimeoutId = null; }
+  try {
+    try { window.speechSynthesis.resume(); } catch (e0) {}
 
-  try { window.speechSynthesis.cancel(); } catch (e0) {}
-  try { window.speechSynthesis.resume(); } catch (e7) {}
-
-  speakTimeoutId = setTimeout(function () {
-    speakTimeoutId = null;
+    const utter = new SpeechSynthesisUtterance(char);
+    utter.lang = 'zh-CN';
+    utter.volume = 1;
+    utter.pitch = 1;
+    let rate = 0.8;
     try {
-      const utter = new SpeechSynthesisUtterance(char);
-      utter.lang = 'zh-CN';
-      utter.volume = 1;
-      utter.pitch = 1;
-      let rate = 0.8;
-      try {
-        const stored = localStorage.getItem('shizi:speechRate');
-        if (stored) {
-          const parsed = parseFloat(stored);
-          if (!isNaN(parsed) && parsed >= 0.5 && parsed <= 1.5) rate = parsed;
-        }
-      } catch (e2) {}
-      utter.rate = rate;
-      if (ttsAvailable) {
-        try {
-          const voices = window.speechSynthesis.getVoices();
-          for (let i = 0; i < voices.length; i++) {
-            if (voices[i].lang && voices[i].lang.toLowerCase().indexOf('zh') === 0) {
-              utter.voice = voices[i];
-              break;
-            }
-          }
-        } catch (e3) {}
+      const stored = localStorage.getItem('shizi:speechRate');
+      if (stored) {
+        const parsed = parseFloat(stored);
+        if (!isNaN(parsed) && parsed >= 0.5 && parsed <= 1.5) rate = parsed;
       }
-      utter.onstart = function () { console.log('[shizi] speech started:', char); };
-      utter.onerror = function (ev) { console.warn('[shizi] speech error:', char, ev.error); };
-      utter.onend = function () { console.log('[shizi] speech ended:', char); };
-      try { window.speechSynthesis.resume(); } catch (e5) {}
-      window.speechSynthesis.speak(utter);
-      console.log('[shizi] speak queued:', char, 'rate=' + rate);
-    } catch (e) {
-      console.warn('[shizi] speak failed:', e);
+    } catch (e2) {}
+    utter.rate = rate;
+
+    if (ttsAvailable) {
+      try {
+        const voices = window.speechSynthesis.getVoices();
+        for (let i = 0; i < voices.length; i++) {
+          if (voices[i].lang && voices[i].lang.toLowerCase().indexOf('zh') === 0) {
+            utter.voice = voices[i];
+            break;
+          }
+        }
+      } catch (e3) {}
     }
-  }, 120);
+
+    utter.onstart = function () { console.log('[shizi] speech started:', char); };
+    utter.onerror = function (ev) { console.warn('[shizi] speech error:', char, ev.error); };
+    utter.onend = function () { console.log('[shizi] speech ended:', char); };
+
+    window.speechSynthesis.speak(utter);
+    console.log('[shizi] speak queued:', char, 'rate=' + rate);
+  } catch (e) {
+    console.warn('[shizi] speak failed:', e);
+  }
 }
 
 /* ===== Envelope helper (cloned from wuziqi) ===== */
